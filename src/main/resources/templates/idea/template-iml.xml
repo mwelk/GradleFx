@@ -24,7 +24,10 @@
           <sdk name="default_flex_sdk" />
         </dependencies>
         <!-- TODO compiler options -->
-        <compiler-options />
+        <compiler-options>
+            <map>
+            </map>
+        </compiler-options>
         <!-- TODO look at an air project -->
         <packaging-air-desktop />
         <!-- TODO Android -->
