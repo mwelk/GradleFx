@@ -15,17 +15,16 @@
 */
 
 package org.gradlefx.ide.tasks
-
 import org.apache.commons.io.FilenameUtils
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.FileTreeElement
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency
 import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
 import org.gradlefx.configuration.Configurations
 import org.gradlefx.conventions.FlexType
 import org.gradlefx.conventions.FrameworkLinkage
-import static java.util.UUID.randomUUID
 
 class IdeaProject extends AbstractIDEProject {
 
@@ -49,6 +48,7 @@ class IdeaProject extends AbstractIDEProject {
         updateConfiguration()
         addSourceDirs()
         addDependencies()
+        addThemes()
         updateFlexSdk()
         addCompilerOptions()
     }
@@ -101,9 +101,9 @@ class IdeaProject extends AbstractIDEProject {
                     Configurations.EXTERNAL_CONFIGURATION_NAME.configName(),
                     Configurations.MERGE_CONFIGURATION_NAME.configName(),
                     Configurations.RSL_CONFIGURATION_NAME.configName(),
-                    Configurations.TEST_CONFIGURATION_NAME.configName(),
-                    Configurations.THEME_CONFIGURATION_NAME.configName()
+                    Configurations.TEST_CONFIGURATION_NAME.configName()
             ].each { configType ->
+                def resolvedArtifacts = project.configurations[configType].resolvedConfiguration.getResolvedArtifacts()
                 project.configurations[configType].allDependencies.each { Dependency dependency ->
 
                     if (dependency instanceof DefaultProjectDependency) {
@@ -122,13 +122,73 @@ class IdeaProject extends AbstractIDEProject {
                             def libNode = new Node(orderEntry, 'library', [name:file.name, type:"flex"])
                             new Node(libNode, 'properties', [id:uuid])
                             def classes = new Node(libNode, 'CLASSES')
-                            new Node(classes, 'root', [url:"jar://\$MODULE_DIR\$/${FilenameUtils.separatorsToUnix(project.relativePath(file))}!/"]);
+                            new Node(classes, 'root', [url:"jar://" + replaceWithVariable(file) + "!/"]);
                             new Node(libNode, 'JAVADOC');
                             new Node(libNode, 'SOURCES');
+                        }
+                    } else if (dependency instanceof DefaultExternalModuleDependency) {
+                        resolvedArtifacts.each { artifact ->
+                            if (artifact.name == dependency.name) {
+                                def String uuid = artifact.file.name
+                                def entry = new Node(entries, 'entry', ['library-id': uuid])
+                                new Node(entry, 'dependency', ['linkage':configTypeToLinkageType(configType)])
+
+                                def orderEntry = new Node(rootMgr, 'orderEntry', [type:"module-library"]);
+                                def libNode = new Node(orderEntry, 'library', [name:artifact.file.name, type:"flex"])
+                                new Node(libNode, 'properties', [id:uuid])
+                                def classes = new Node(libNode, 'CLASSES')
+                                new Node(classes, 'root', [url:"jar://" + replaceWithVariable(artifact.file) + "!/"]);
+                                new Node(libNode, 'JAVADOC');
+                                new Node(libNode, 'SOURCES');
+                            }
                         }
                     }
                 }
 
+            }
+
+            def compilerOptions = xml.component.find { it.'@name' == 'FlexBuildConfigurationManager' }
+                    .configurations.configuration['compiler-options'].first()
+            if (flexConvention.type == FlexType.swc) {
+                def filesToIncludeOption = new Node(compilerOptions, 'option', ['name': "filesToIncludeInSWC"])
+
+                def resources = []
+                flexConvention.resourceDirs.each {
+                    resources += replaceWithVariable(project.file(it))
+                }
+
+                filesToIncludeOption.@'value' = resources.join(';')
+            }
+        }
+    }
+
+    def addThemes() {
+        editXmlFile imlFilename, { xml ->
+            def entries = xml.component.find { it.'@name' == 'FlexBuildConfigurationManager' }
+                    .configurations.configuration['compiler-options'].map.first()
+            def themeConfig = Configurations.THEME_CONFIGURATION_NAME.configName();
+            def resolvedArtifacts = project.configurations[themeConfig].resolvedConfiguration.getResolvedArtifacts()
+
+            def themes = []
+
+            project.configurations[themeConfig].allDependencies.each { Dependency dependency ->
+
+                if (dependency instanceof DefaultSelfResolvingDependency) {
+                    def selfDependency = dependency as DefaultSelfResolvingDependency;
+                    selfDependency.source.files.each { file ->
+                        themes.add("${FilenameUtils.separatorsToUnix(project.relativePath(file))}")
+                    }
+                } else if (dependency instanceof DefaultExternalModuleDependency) {
+                    resolvedArtifacts.each { artifact ->
+                        if (artifact.name == dependency.name) {
+                            themes.add(replaceWithVariable(artifact.file))
+                        }
+                    }
+                }
+            }
+
+            if (themes.size() > 0) {
+                new Node(entries, 'entry', ['key': 'compiler.theme', 'value': themes.join("&#10;")])
             }
         }
     }
@@ -155,6 +215,21 @@ class IdeaProject extends AbstractIDEProject {
         InputStream stream = getClass().getResourceAsStream(path)
 
         writeContent stream, project.file(imlFilename), true
+    }
+
+    private String replaceWithVariable(File file) {
+
+        def userHome = FilenameUtils.separatorsToUnix(System.getProperty("user.home"))
+        def convertedPath = FilenameUtils.separatorsToUnix(file.absolutePath)
+        def replacedFileName
+
+        if (convertedPath.startsWith(userHome)) {
+            replacedFileName = "\$USER_HOME\$" + convertedPath.substring(userHome.length())
+        } else {
+            replacedFileName = "\$MODULE_DIR\$/" + FilenameUtils.separatorsToUnix(project.relativePath(file))
+        }
+
+        return replacedFileName;
     }
 
     private void updateConfiguration() {
