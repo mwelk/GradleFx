@@ -41,6 +41,7 @@ class LibraryCommandLineInstruction extends CommandLineInstruction {
         addInternalLibraries()
         addExternalLibraries()
         addMergedLibraries()
+        addTheme()
         
         addAdditionalCompilerOptions()
         addOutput()
