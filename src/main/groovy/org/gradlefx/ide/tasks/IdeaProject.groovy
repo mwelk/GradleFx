@@ -176,7 +176,7 @@ class IdeaProject extends AbstractIDEProject {
                 if (dependency instanceof DefaultSelfResolvingDependency) {
                     def selfDependency = dependency as DefaultSelfResolvingDependency;
                     selfDependency.source.files.each { file ->
-                        themes.add("${FilenameUtils.separatorsToUnix(project.relativePath(file))}")
+                        themes.add("${replaceWithVariable(file)}")
                     }
                 } else if (dependency instanceof DefaultExternalModuleDependency) {
                     resolvedArtifacts.each { artifact ->
