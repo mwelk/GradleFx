@@ -15,12 +15,13 @@
  */
 
 package org.gradlefx.configuration.sdk
-
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.internal.file.BaseDirFileResolver
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.internal.nativeplatform.filesystem.FileSystems
+import org.gradle.internal.nativeplatform.filesystem.FileSystem
+import org.gradle.internal.nativeplatform.filesystem.FileSystemServices
+import org.gradle.internal.os.OperatingSystem
 import org.gradlefx.configuration.Configurations
 import org.gradlefx.conventions.GradleFxConvention
 
@@ -38,7 +39,9 @@ class SdkInstallLocationFactory {
         this.project = project
         gradleFxConvention = (GradleFxConvention) project.convention.plugins.flex
         File gradleFxUserHomeDir = gradleFxConvention.gradleFxUserHomeDir
-        FileResolver sdksBaseDirResolver = new BaseDirFileResolver(FileSystems.default, gradleFxUserHomeDir)
+        FileSystemServices services = new FileSystemServices();
+        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
+        FileResolver sdksBaseDirResolver = new BaseDirFileResolver(fileSystem, gradleFxUserHomeDir)
         sdksInstallBaseDirectory = sdksBaseDirResolver.resolve(SDKS_BASE_DIR_NAME)
     }
 
@@ -49,7 +52,9 @@ class SdkInstallLocationFactory {
         File flexSdkArchive = getSdkArchiveForConfiguration(Configurations.FLEXSDK_CONFIGURATION_NAME)
         File airSdkArchive = getSdkArchiveForConfiguration(Configurations.AIRSDK_CONFIGURATION_NAME)
 
-        FileResolver installBaseDirResolver = new BaseDirFileResolver(FileSystems.default, sdksInstallBaseDirectory)
+        FileSystemServices services = new FileSystemServices();
+        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
+        FileResolver installBaseDirResolver = new BaseDirFileResolver(fileSystem, sdksInstallBaseDirectory)
         File sdkInstallDirectory = null
         if(isFlexSdkDeclaredAsDependency && isAirSdkDeclaredAsDependency) {
             //hash of both flex and air sdk archives define the directory name
