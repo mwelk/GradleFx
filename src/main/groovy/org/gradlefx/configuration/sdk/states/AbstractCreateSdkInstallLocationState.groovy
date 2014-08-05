@@ -15,16 +15,15 @@
  */
 
 package org.gradlefx.configuration.sdk.states
+
 import org.gradle.api.Project
 import org.gradle.api.internal.file.BaseDirFileResolver
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.internal.nativeplatform.filesystem.FileSystem
-import org.gradle.internal.nativeplatform.filesystem.FileSystemServices
-import org.gradle.internal.os.OperatingSystem
-import org.gradlefx.configuration.sdk.*
+import org.gradle.internal.nativeplatform.filesystem.FileSystems
 import org.gradlefx.conventions.GradleFxConvention
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.gradlefx.configuration.sdk.*
 
 abstract class AbstractCreateSdkInstallLocationState implements SdkInitState {
 
@@ -58,9 +57,7 @@ abstract class AbstractCreateSdkInstallLocationState implements SdkInitState {
 
         project = context.project
 
-        FileSystemServices services = new FileSystemServices();
-        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
-        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(fileSystem, installLocation.directory)
+        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(FileSystems.default, installLocation.directory)
         isInstalled = sdkInstallDirectoryResolver.resolve(sdkFile).exists()
     }
 }

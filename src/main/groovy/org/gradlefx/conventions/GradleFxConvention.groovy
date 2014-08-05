@@ -15,13 +15,14 @@
  */
 
 package org.gradlefx.conventions
+
 import org.gradle.api.Project
-import org.gradle.api.internal.file.BaseDirFileResolver
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.internal.nativeplatform.filesystem.FileSystem
-import org.gradle.internal.nativeplatform.filesystem.FileSystemServices
-import org.gradle.internal.os.OperatingSystem
+import org.gradle.api.internal.file.BaseDirFileResolver
+import org.gradle.internal.nativeplatform.filesystem.FileSystems
+import org.gradlefx.configuration.sdk.SdkType
 import org.gradlefx.conventions.adl.AdlConvention
+
 
 @Mixin(GradleFxDerivedProperties)
 class GradleFxConvention {
@@ -126,9 +127,7 @@ class GradleFxConvention {
     def GradleFxConvention(Project project) {
         this.project = project
 
-        FileSystemServices services = new FileSystemServices();
-        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
-        FileResolver gradleFxUserHomeDirResolver = new BaseDirFileResolver(fileSystem, project.gradle.gradleUserHomeDir)
+        FileResolver gradleFxUserHomeDirResolver = new BaseDirFileResolver(FileSystems.default, project.gradle.gradleUserHomeDir)
         gradleFxUserHomeDir = gradleFxUserHomeDirResolver.resolve("gradleFx")
 
         htmlWrapper     = new HtmlWrapperConvention(project)

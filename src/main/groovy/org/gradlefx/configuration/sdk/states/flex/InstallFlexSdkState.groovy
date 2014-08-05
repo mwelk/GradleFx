@@ -15,11 +15,10 @@
  */
 
 package org.gradlefx.configuration.sdk.states.flex
+
 import org.gradle.api.internal.file.BaseDirFileResolver
 import org.gradle.api.internal.file.FileResolver
-import org.gradle.internal.nativeplatform.filesystem.FileSystem
-import org.gradle.internal.nativeplatform.filesystem.FileSystemServices
-import org.gradle.internal.os.OperatingSystem
+import org.gradle.internal.nativeplatform.filesystem.FileSystems
 import org.gradlefx.configuration.sdk.SdkInstallLocation
 import org.gradlefx.configuration.sdk.states.AbstractInstallSdkState
 import org.gradlefx.conventions.GradleFxConvention
@@ -54,9 +53,7 @@ class InstallFlexSdkState extends AbstractInstallSdkState {
      * path to playerglobal (it points to the playerglobal.swc installed in the flex install directory)
      */
     private void updateFrameworkConfigFiles() {
-        FileSystemServices services = new FileSystemServices();
-        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
-        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(fileSystem, sdkInstallLocation.directory)
+        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(FileSystems.default, sdkInstallLocation.directory)
         File ideConfigDir = sdkInstallDirectoryResolver.resolve("ide/flashbuilder/config")
         File frameworksDir = sdkInstallDirectoryResolver.resolve("frameworks")
 
@@ -70,9 +67,7 @@ class InstallFlexSdkState extends AbstractInstallSdkState {
     }
 
     private File getAdditionalDownloadsAntScriptFile() {
-        FileSystemServices services = new FileSystemServices();
-        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
-        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(fileSystem, sdkInstallLocation.directory)
+        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(FileSystems.default, sdkInstallLocation.directory)
         return sdkInstallDirectoryResolver.resolve("frameworks/downloads.xml")
     }
 
@@ -88,18 +83,14 @@ class InstallFlexSdkState extends AbstractInstallSdkState {
     }
 
     private File getAdditionalDownloadsAntScriptDirectory() {
-        FileSystemServices services = new FileSystemServices();
-        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
-        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(fileSystem, sdkInstallLocation.directory)
+        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(FileSystems.default, sdkInstallLocation.directory)
         return sdkInstallDirectoryResolver.resolve("frameworks")
     }
 
     private void downloadPlayerGlobalSwc() {
-        FileSystemServices services = new FileSystemServices();
-        FileSystem fileSystem = services.createFileSystem(OperatingSystem.current());
-        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(fileSystem, sdkInstallLocation.directory)
+        FileResolver sdkInstallDirectoryResolver = new BaseDirFileResolver(FileSystems.default, sdkInstallLocation.directory)
         File playerGlobalSwcInstallLocation = sdkInstallDirectoryResolver.resolve("frameworks/libs/player/11.1")
-        FileResolver playerGlobalSwcInstallLocationResolver = new BaseDirFileResolver(fileSystem, playerGlobalSwcInstallLocation)
+        FileResolver playerGlobalSwcInstallLocationResolver = new BaseDirFileResolver(FileSystems.default, playerGlobalSwcInstallLocation)
         File playerGlobalSwcInstallFile = playerGlobalSwcInstallLocationResolver.resolve("playerglobal.swc")
         String playerGlobalSwcDownloadUrl = getPlayerGlobalSwcDownloadUrl()
 
